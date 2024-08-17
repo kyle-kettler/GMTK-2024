@@ -1,0 +1,13 @@
+# LÖVE specific
+love.app/
+*.love
+
+# Lua specific
+*.lua~
+*.luac
+
+/tiled/Treasure Hunters/
+
+# OS specific
+.DS_Store
+Thumbs.db
