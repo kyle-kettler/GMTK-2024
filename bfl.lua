@@ -1,9 +1,9 @@
+local middleclass = require("lib/middleclass")
 local Constants = require("constants")
-local Player = require("player")
 
-local BFL = {}
+local BFL = middleclass("BFL")
 
-function BFL:load()
+function BFL:initialize(world)
   self.width = Constants.MAP_PIXEL_WIDTH     -- Full width of the screen
   self.height = 40                           -- Thickness of the laser
   self.y = Constants.MAP_BOTTOM + self.height -- Start below the bottom of the screen
@@ -18,11 +18,11 @@ function BFL:load()
 
   self.physics = {}
   -- Position the body at the top of the laser
-  self.physics.body = love.physics.newBody(World, Constants.MAP_PIXEL_WIDTH / 2, self.y, "kinematic")
+  self.physics.body = love.physics.newBody(world, Constants.MAP_PIXEL_WIDTH / 2, self.y, "kinematic")
   self.physics.shape = love.physics.newRectangleShape(0, self.height / 2, self.width, self.height)
   self.physics.fixture = love.physics.newFixture(self.physics.body, self.physics.shape)
   self.physics.fixture:setSensor(true)
-  self.physics.fixture:setUserData("BFL")
+  self.physics.fixture:setUserData({ type = "bfl", instance = self })
 end
 
 function BFL:update(dt)
@@ -36,35 +36,13 @@ function BFL:update(dt)
     self.y = self.y - self.speed * dt
     -- Update the physics body position to match the top of the laser
     self.physics.body:setY(self.y)
-
-    -- Check for overlap with player and apply damage
-    self:checkPlayerOverlap(dt)
-
     -- Reset the laser if it goes off the top of the screen
     if self.y + self.height < 0 then
       self:reset()
     end
   end
-
   -- Update damage cooldown timer
   self.damageTimer = math.max(0, self.damageTimer - dt)
-end
-
-function BFL:checkPlayerOverlap(dt)
-  if not self.active then
-    return
-  end
-
-  local x1, y1, x2, y2 = self.physics.fixture:getBoundingBox()
-  local px1, py1, px2, py2 = Player.physics.fixture:getBoundingBox()
-
-  if x1 < px2 and x2 > px1 and y1 < py2 and y2 > py1 then
-    -- Overlap detected
-    if self.damageTimer <= 0 then
-      Player:takeDamage(self.damage)
-      self.damageTimer = self.damageCooldown
-    end
-  end
 end
 
 function BFL:draw()
@@ -76,7 +54,6 @@ function BFL:draw()
     -- Draw active laser
     love.graphics.setColor(self.color)
     love.graphics.rectangle("fill", 0, self.y, self.width, self.height)
-
     -- Draw additional laser effects
     love.graphics.setColor(1, 1, 1, 0.5) -- White with transparency
     for i = 1, 5 do
@@ -84,7 +61,6 @@ function BFL:draw()
       love.graphics.line(0, self.y + self.height - i, self.width, self.y + self.height - i)
     end
   end
-
   love.graphics.setColor(1, 1, 1) -- Reset color to white
 end
 
@@ -94,6 +70,24 @@ function BFL:reset()
   self.active = false
   self.warmupTimer = 0
   self.damageTimer = 0
+end
+
+function BFL.beginContact(a, b, collision)
+  local objA = a:getUserData()
+  local objB = b:getUserData()
+
+  local function handleCollision(obj1, obj2)
+    if obj1 and obj1.type == "bfl" and obj2 and obj2.type == "player" then
+      if obj1.instance.active and obj1.instance.damageTimer <= 0 then
+        obj2.instance:takeDamage(obj1.instance.damage)
+        obj1.instance.damageTimer = obj1.instance.damageCooldown
+      end
+      return true
+    end
+    return false
+  end
+
+  return handleCollision(objA, objB) or handleCollision(objB, objA)
 end
 
 return BFL

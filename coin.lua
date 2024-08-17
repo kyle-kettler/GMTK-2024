@@ -1,40 +1,41 @@
+local middleclass = require("lib/middleclass")
 local anim8 = require("lib/anim8")
-Player = require("player")
+local Player = require("player")
 
-local Coin = { spriteSheet = love.graphics.newImage("assets/sprites/coin.png") }
+local Coin = middleclass("Coin")
 
-Coin.__index = Coin
+Coin.static.spriteSheet = love.graphics.newImage("assets/sprites/coin.png")
+Coin.static.width = 11
+Coin.static.height = 11
+Coin.static.ActiveCoins = {}
+Coin.static.collectedCount = 0
 
-Coin.width = 11
-Coin.height = 11
+function Coin:initialize(x, y, world)
+  self.x = x
+  self.y = y
+  self.scaleX = 1
+  self.randomTimeOffset = math.random(0, 100)
+  self.toBeRemoved = false
 
-ActiveCoins = {}
+  self.grid = anim8.newGrid(11, 11, Coin.spriteSheet:getWidth(), Coin.spriteSheet:getHeight())
+  self.animation = anim8.newAnimation(self.grid("1-4", 1), 0.15)
 
-function Coin.new(x, y)
-  local instance = setmetatable({}, Coin)
-  instance.x = x
-  instance.y = y
-  instance.scaleX = 1
-  instance.randomTimeOffset = math.random(0, 100)
-  instance.toBeRemoved = false
+  self.physics = {}
+  self.physics.body = love.physics.newBody(world, self.x, self.y, "static")
+  self.physics.shape = love.physics.newRectangleShape(Coin.width, Coin.height)
+  self.physics.fixture = love.physics.newFixture(self.physics.body, self.physics.shape)
+  self.physics.fixture:setSensor(true)
+  self.physics.fixture:setUserData({ type = "coin", instance = self })
 
-  instance.grid = anim8.newGrid(11, 11, instance.spriteSheet:getWidth(), instance.spriteSheet:getHeight())
-  instance.animation = anim8.newAnimation(instance.grid("1-4", 1), 0.15)
-
-  instance.physics = {}
-  instance.physics.body = love.physics.newBody(World, instance.x, instance.y, "static")
-  instance.physics.shape = love.physics.newRectangleShape(instance.width, instance.height)
-  instance.physics.fixture = love.physics.newFixture(instance.physics.body, instance.physics.shape)
-  instance.physics.fixture:setSensor(true)
-  table.insert(ActiveCoins, instance)
+  table.insert(Coin.ActiveCoins, self)
 end
 
 function Coin:draw()
-  self.animation:draw(self.spriteSheet, self.x, self.y, 0, self.scaleX, 1, 11, 11)
+  self.animation:draw(Coin.spriteSheet, self.x, self.y, 0, self.scaleX, 1, 11, 11)
 end
 
 function Coin.drawAll()
-  for i, instance in ipairs(ActiveCoins) do
+  for _, instance in ipairs(Coin.ActiveCoins) do
     instance:draw()
   end
 end
@@ -45,18 +46,19 @@ function Coin:update(dt)
 end
 
 function Coin.updateAll(dt)
-  for i, instance in ipairs(ActiveCoins) do
+  for _, instance in ipairs(Coin.ActiveCoins) do
     instance:update(dt)
   end
 end
 
 function Coin:remove()
-  for i, instance in ipairs(ActiveCoins) do
+  for i, instance in ipairs(Coin.ActiveCoins) do
     if instance == self then
-      Player:incrementCoins()
-      print(Player.coins)
+      Coin.collectedCount = Coin.collectedCount + 1 -- Increment the static counter
+      print("Coins collected:", Coin.collectedCount)
       self.physics.body:destroy()
-      table.remove(ActiveCoins, i)
+      table.remove(Coin.ActiveCoins, i)
+      break
     end
   end
 end
@@ -68,14 +70,18 @@ function Coin:checkRemove()
 end
 
 function Coin.beginContact(a, b, collision)
-  for i, instance in ipairs(ActiveCoins) do
-    if a == instance.physics.fixture or b == instance.physics.fixture then
-      if a == Player.physics.fixture or b == Player.physics.fixture then
-        instance.toBeRemoved = true
-        return true
-      end
+  local objA = a:getUserData()
+  local objB = b:getUserData()
+  local function handleCollision(obj1, obj2)
+    if obj1 and obj1.type == "coin" and obj2 and obj2.type == "player" then
+      obj1.instance.toBeRemoved = true
+      obj2.instance:incrementCoins()
+      return true
     end
+    return false
   end
+  local result = handleCollision(objA, objB) or handleCollision(objB, objA)
+  return result
 end
 
 return Coin

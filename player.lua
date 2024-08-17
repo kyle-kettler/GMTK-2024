@@ -1,11 +1,13 @@
+local middleclass = require("lib/middleclass")
 local anim8 = require("lib/anim8")
-Constants = require("constants")
+local Constants = require("constants")
 
-local Player = {}
+local Player = middleclass("Player")
 
-function Player:load()
+function Player:initialize(world)
+  self.world = world
   -- Basic properties
-  self.x = 100
+  self.x = Constants.GAME_WIDTH / 2
   self.y = Constants.MAP_BOTTOM - 150
   self.startX = self.x
   self.startY = self.y
@@ -18,7 +20,7 @@ function Player:load()
   self.acceleration = 4000
   self.friction = 4000
   self.gravity = 1700
-  self.jumpAmount = -650
+  self.jumpAmount = -500
   self.isMoving = false
 
   -- Health and state
@@ -48,33 +50,44 @@ function Player:load()
   -- Wall climbing properties
   self.isClimbing = false
   self.climbSpeed = 200
-  self.wallJumpForce = { x = 300, y = -500 }
   self.wallSlideSpeed = 50
   self.wallStickTime = 0.2
   self.wallStickTimer = 0
   self.maxClimbTime = 1
   self.climbTimer = 0
+  self.wallJumpForce = { x = 700, y = -500 }
+  self.hasWallJump = false
+
+  -- Launch properties
+  self.isLaunching = false
+  self.launchRemaining = 2
+  self.launchDuration = 0.3
+  self.launchSpeed = 500
+  self.launchTimer = 0
+  self.launchCylinder = {
+    width = 15,
+    height = 30,
+    color = { 1, 0.5, 0, 0.7 }, -- Orange with some transparency
+  }
 
   self.state = "idle"
 
-  -- Physics setup
+  self:setupPhysics()
+  self:setupAnimations()
+end
+
+function Player:setupPhysics()
   self.physics = {}
-  self.physics.body = love.physics.newBody(World, self.x, self.y, "dynamic")
+  self.physics.body = love.physics.newBody(self.world, self.x, self.y, "dynamic")
   self.physics.body:setFixedRotation(true)
   self.physics.shape = love.physics.newRectangleShape(self.width, self.height)
   self.physics.fixture = love.physics.newFixture(self.physics.body, self.physics.shape)
-  self.physics.fixture:setUserData(self)
+  self.physics.fixture:setUserData({ type = "player", instance = self })
+end
 
-  -- Wall sensor
-  self.wallSensor = {}
-  self.wallSensor.shape = love.physics.newRectangleShape(self.width + 4, self.height)
-  self.wallSensor.fixture = love.physics.newFixture(self.physics.body, self.wallSensor.shape, 1)
-  self.wallSensor.fixture:setSensor(true)
-
-  -- Animation setup
+function Player:setupAnimations()
   self.spriteSheet = love.graphics.newImage("assets/sprites/player.png")
   self.grid = anim8.newGrid(32, 32, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
-
   self.animations = {
     idle = anim8.newAnimation(self.grid("1-5", 1), 0.12),
     run = anim8.newAnimation(self.grid("1-6", 2), 0.1),
@@ -96,6 +109,7 @@ function Player:update(dt)
   self:decreaseGraceTime(dt)
   self:updateDash(dt)
   self:updateWallClimb(dt)
+  self:updateLaunch(dt)
   if self.isClimbing then
     self.yVel = self.yInput * self.climbSpeed
   end
@@ -211,10 +225,11 @@ function Player:jump()
     self.yVel = self.jumpAmount
     self.grounded = false
     self.graceTime = 0
-  elseif self.isClimbing then
+  elseif self.isClimbing and self.hasWallJump then
     -- Wall jump
     self.xVel = -self.direction * self.wallJumpForce.x
     self.yVel = self.wallJumpForce.y
+    self.hasWallJump = false
     self:stopClimbing()
   elseif self.hasDoubleJump then
     self.hasDoubleJump = false
@@ -250,6 +265,30 @@ function Player:updateDash(dt)
   end
 end
 
+function Player:launch(camera)
+  if self.launchRemaining > 0 and not self.isLaunching and not self.isClimbing then
+    camera:shake(6, 0.2, 60)
+    self.launchRemaining = self.launchRemaining - 1
+    self.isLaunching = true
+    self.launchTimer = self.launchDuration
+    self.yVel = -self.launchSpeed
+  end
+end
+
+function Player:updateLaunch(dt)
+  if self.isLaunching then
+    self.launchTimer = self.launchTimer - dt
+    if self.launchTimer <= 0 then
+      self.isLaunching = false
+    else
+      self.yVel = -self.launchSpeed
+
+      local progress = self.launchTimer / self.launchDuration
+      self.launchCylinder.height = 40 * progress
+    end
+  end
+end
+
 function Player:decreaseGraceTime(dt)
   if not self.grounded then
     self.graceTime = self.graceTime - dt
@@ -257,7 +296,7 @@ function Player:decreaseGraceTime(dt)
 end
 
 function Player:applyGravity(dt)
-  if not self.grounded and not self.isAirDashing and not self.isClimbing then
+  if not self.grounded and not self.isAirDashing and not self.isClimbing and not self.isLaunching then
     self.yVel = self.yVel + self.gravity * dt
   end
 end
@@ -277,7 +316,9 @@ function Player:land(collision)
   self.grounded = true
   self.isMoving = false
   self.hasDoubleJump = true
+  self.hasWallJump = true
   self.graceTime = self.graceDuration
+  self.launchRemaining = 2
 end
 
 function Player:syncPhysics()
@@ -316,6 +357,18 @@ function Player:endContact(a, b, collision)
 end
 
 function Player:draw()
+  if self.isLaunching then
+    love.graphics.setColor(unpack(self.launchCylinder.color))
+    love.graphics.rectangle(
+      "fill",
+      self.x - self.launchCylinder.width / 2,
+      self.y + self.height / 2,
+      self.launchCylinder.width,
+      self.launchCylinder.height
+    )
+    -- Reset color after drawing the cylinder
+    love.graphics.setColor(1, 1, 1, 1)
+  end
   local scaleX = self.direction
   love.graphics.setColor(self.color.red, self.color.green, self.color.blue)
   self.anim:draw(self.spriteSheet, self.x, self.y, 0, scaleX, 1, 16, 16)

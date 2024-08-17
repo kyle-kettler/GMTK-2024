@@ -1,11 +1,17 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
 local Constants = require("constants")
-Player = require("player")
-Coin = require("coin")
-Camera = require("lib/camera")
-Spike = require("spikes")
-Wall = require("wall")
-BFL = require("bfl")
+local Player = require("player")
+local Coin = require("coin")
+local Camera = require("lib/camera")
+local Spike = require("spikes")
+local Wall = require("wall")
+local BFL = require("bfl")
+local GUI = require("gui")
+
+local player
+local gui
+local bfl
+local walls = {}
 
 local push = require("lib/push")
 local sti = require("lib/sti")
@@ -20,15 +26,13 @@ local input = baton.new({
     down = { "key:down", "key:s", "axis:lefty+", "button:dpdown" },
     action = { "key:x", "button:x" },
     jump = { "key:space", "button:a" },
+    launch = { "key:j", "button:rightshoulder" },
   },
   pairs = {
     move = { "left", "right", "up", "down" },
   },
   joystick = love.joystick.getJoysticks()[1],
 })
-
-local initialPhysicsDelay = 0.1
-local currentPhysicsDelay = initialPhysicsDelay
 
 function love.load()
   push:setupScreen(Constants.GAME_WIDTH, Constants.GAME_HEIGHT, windowWidth, windowHeight, {
@@ -46,54 +50,64 @@ function love.load()
   Map:box2d_init(World)
   Map.layers.ground.visible = false
   Map.layers.walls.visible = false
+
   for _, object in ipairs(Map.layers.walls.objects) do
-    Wall.new(object.x, object.y, object.width, object.height)
+    table.insert(walls, Wall:new(object.x, object.y, object.width, object.height))
   end
 
-  local cameraStartX = Constants.GAME_WIDTH / 2
+  for _, object in ipairs(Map.layers.spikes.objects) do
+    Spike:new(object.x, object.y, World)
+  end
+
+  local mapWidth = Map.width * Map.tilewidth
+  local cameraStartX = mapWidth / 2
   local cameraStartY = Constants.MAP_BOTTOM - Constants.GAME_HEIGHT / 2
+
   camera = Camera(cameraStartX, cameraStartY, Constants.GAME_WIDTH, Constants.GAME_HEIGHT)
   camera.scale = 1
 
-  Player:load()
-  BFL:load()
-  Coin.new(200, 300)
-  Coin.new(400, 300)
-  Coin.new(500, 300)
-  Coin.new(550, 300)
-
-  -- You can now use Constants.MAP_PIXEL_HEIGHT here or in other functions
-  print("Map bottom:", Constants.MAP_PIXEL_HEIGHT)
+  player = Player:new(World)
+  gui = GUI:new(player)
+  bfl = BFL:new(World)
+  gui:load()
+  Coin:new(200, 300, World)
+  Coin:new(400, 300, World)
+  Coin:new(500, 300, World)
+  Coin:new(550, 300, World)
 end
 
 function love.update(dt)
-  if currentPhysicsDelay > 0 then
-    currentPhysicsDelay = currentPhysicsDelay - dt
-    return -- Skip the rest of the update for the delay period
-  end
   input:update()
   World:update(dt)
   Map:update(dt)
-  Player:update(dt)
+  player:update(dt)
   Coin.updateAll(dt)
   Spike.updateAll(dt)
-  Wall.updateAll(dt)
-  BFL:update(dt)
+  -- bfl:update(dt)
+  gui:update(dt)
+
+  for _, wall in ipairs(walls) do
+    wall:update(dt)
+  end
 
   local moveX, moveY = input:get("move")
-  Player:move(dt, moveX, moveY)
+  player:move(dt, moveX, moveY)
 
   if input:pressed("jump") then
-    Player:jump()
+    player:jump()
   end
 
   if input:pressed("action") then
-    Player:dash()
+    player:dash()
+  end
+
+  if input:pressed("launch") then
+    player:launch(camera)
   end
 
   -- Update camera to follow player
   camera:update(dt)
-  camera:follow(Player.x, Player.y)
+  camera:follow(player.x, player.y)
   camera:setFollowStyle("PLATFORMER")
 
   -- Set camera bounds to map size
@@ -107,17 +121,20 @@ function beginContact(a, b, collision)
     return
   end
   if Spike.beginContact(a, b, collision) then
-    return
+    return Spike.beginContact(a, b, collision)
   end
   if Wall.beginContact(a, b, collision) then
     return
   end
-  Player:beginContact(a, b, collision)
+  if bfl.beginContact(a, b, collision) then
+    return
+  end
+  player:beginContact(a, b, collision)
 end
 
 function endContact(a, b, collision)
   Wall.endContact(a, b, collision)
-  Player:endContact(a, b, collision)
+  player:endContact(a, b, collision)
 end
 
 function love.draw()
@@ -136,15 +153,19 @@ function love.draw()
     camera.scale
   )
 
-  Player:draw()
+  for _, wall in ipairs(walls) do
+    wall:draw()
+  end
+  player:draw()
   Coin.drawAll()
   Spike.drawAll()
-  BFL:draw()
+  bfl:draw()
 
   camera:detach()
 
   camera:draw()
-  love.graphics.print(tostring(Player.coins), 10, 10)
+  love.graphics.print(tostring(player.coins), 10, 10)
+  gui:draw()
 
   push:finish()
 end
