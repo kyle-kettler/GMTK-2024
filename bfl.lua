@@ -12,7 +12,7 @@ function BFL:initialize(world)
   self.active = false                        -- Laser starts inactive
   self.warmupTime = 0                        -- Time in seconds before the laser activates
   self.warmupTimer = 0
-  self.speed = 10                            -- Speed of upward movement (adjust as needed)
+  self.speed = 50                           -- Speed of upward movement (adjust as needed)
   self.damageCooldown = 0.1                  -- Time between damage ticks
   self.damageTimer = 0                       -- Timer to track cooldown
 
@@ -88,6 +88,13 @@ function BFL.beginContact(a, b, collision)
   end
 
   return handleCollision(objA, objB) or handleCollision(objB, objA)
+end
+
+function BFL:destroy()
+  if self.body then
+    self.body:destroy()
+    self.body = nil
+  end
 end
 
 return BFL

@@ -1,8 +1,8 @@
 local Constants = {}
 
 -- Game dimensions
-Constants.GAME_WIDTH = 600
-Constants.GAME_HEIGHT = 450
+Constants.GAME_WIDTH = 400
+Constants.GAME_HEIGHT = 300
 
 -- Initialize map-related constants
 Constants.MAP_WIDTH = 0

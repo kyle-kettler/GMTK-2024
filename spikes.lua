@@ -12,7 +12,7 @@ Spike.static.ActiveSpikes = {}
 function Spike:initialize(x, y, world)
   self.x = x
   self.y = y
-  self.damage = 1
+  self.damage = 2
   self.physics = {}
   self.physics.body = love.physics.newBody(world, self.x, self.y, "static")
   self.physics.shape = love.physics.newRectangleShape(Spike.width - 4, Spike.height - 2)
@@ -46,17 +46,29 @@ function Spike.beginContact(a, b, collision)
   local objA = a:getUserData()
   local objB = b:getUserData()
 
-  local function handleCollision(obj1, obj2)
-    if obj1 and obj1.type == "spike" and obj2 and obj2.type == "player" then
-      obj2.instance:takeDamage(obj1.instance.damage)
-      return true
-    end
-    return false
+  if objA.type == "spike" and objB.type == "player" then
+    objB.instance:takeDamage(objA.instance.damage)
+    return true
+  elseif objB.type == "spike" and objA.type == "player" then
+    objA.instance:takeDamage(objB.instance.damage)
+    return true
   end
 
-  local result = handleCollision(objA, objB) or handleCollision(objB, objA)
+  return false
+end
 
-  return result
+function Spike.removeAll()
+  for i = #Spike.ActiveSpikes, 1, -1 do
+    Spike.ActiveSpikes[i]:destroy()
+    table.remove(Spike.ActiveSpikes, i)
+  end
+end
+
+function Spike:destroy()
+  if self.body then
+    self.body:destroy()
+    self.body = nil
+  end
 end
 
 return Spike

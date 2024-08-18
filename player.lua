@@ -4,7 +4,10 @@ local Constants = require("constants")
 
 local Player = middleclass("Player")
 
+Player.static.instance = nil
+
 function Player:initialize(world)
+  Player.static.instance = self
   self.world = world
   -- Basic properties
   self.x = Constants.GAME_WIDTH / 2
@@ -25,7 +28,7 @@ function Player:initialize(world)
 
   -- Health and state
   self.isAlive = true
-  self.health = { current = 3, max = 3 }
+  self.health = { current = 6, max = 6 }
 
   -- Visual properties
   self.color = { red = 1, green = 1, blue = 1, speed = 5 }
@@ -61,14 +64,19 @@ function Player:initialize(world)
   -- Launch properties
   self.isLaunching = false
   self.launchRemaining = 2
-  self.launchDuration = 0.3
-  self.launchSpeed = 500
+  self.launchDuration = 0.4
+  self.launchSpeed = 350
   self.launchTimer = 0
   self.launchCylinder = {
     width = 15,
     height = 30,
     color = { 1, 0.5, 0, 0.7 }, -- Orange with some transparency
   }
+
+  -- Audio properties
+  self.sounds = {}
+  self.sounds.launch = love.audio.newSource("assets/audio/launch.mp3", "static")
+  self.sounds.launch:setVolume(1.0)
 
   self.state = "idle"
 
@@ -86,21 +94,26 @@ function Player:setupPhysics()
 end
 
 function Player:setupAnimations()
-  self.spriteSheet = love.graphics.newImage("assets/sprites/player.png")
-  self.grid = anim8.newGrid(32, 32, self.spriteSheet:getWidth(), self.spriteSheet:getHeight())
+  self.playerSheet = love.graphics.newImage("assets/sprites/robo.png")
+  self.flameSheet = love.graphics.newImage("assets/sprites/launch-flame.png")
+  self.playerGrid = anim8.newGrid(32, 32, self.playerSheet:getWidth(), self.playerSheet:getHeight())
+  self.flameGrid = anim8.newGrid(16, 16, self.flameSheet:getWidth(), self.flameSheet:getHeight())
   self.animations = {
-    idle = anim8.newAnimation(self.grid("1-5", 1), 0.12),
-    run = anim8.newAnimation(self.grid("1-6", 2), 0.1),
-    jump = anim8.newAnimation(self.grid("1-3", 3), 0.1, "pauseAtEnd"),
-    fall = anim8.newAnimation(self.grid("1-1", 4), 0.1, "pauseAtEnd"),
-    climb = anim8.newAnimation(self.grid("1-2", 5), 0.2),
+    idle = anim8.newAnimation(self.playerGrid("1-11", 1), 0.15),
+    run = anim8.newAnimation(self.playerGrid("1-2", 2), 0.1),
+    jump = anim8.newAnimation(self.playerGrid("1-3", 3), 0.1, "pauseAtEnd"),
+    climb = anim8.newAnimation(self.playerGrid("1-3", 5), 0.2),
+    launch = anim8.newAnimation(self.playerGrid("1-4", 7), 0.2),
+    launchFlameStart = anim8.newAnimation(self.flameGrid("2-4", 1), 0.1, "pauseAtEnd"),
+    launchFlame = anim8.newAnimation(self.flameGrid("1-4", 2), 0.1),
   }
   self.anim = self.animations.idle
+  self.currentFlameAnim = nil
 end
 
 function Player:update(dt)
   self:unTint(dt)
-  self:respawn()
+  -- self:respawn()
   self:setState()
   self:syncPhysics()
   self.anim:update(dt)
@@ -111,7 +124,7 @@ function Player:update(dt)
   self:updateWallClimb(dt)
   self:updateLaunch(dt)
   if self.isClimbing then
-    self.yVel = self.yInput * self.climbSpeed
+    self.yVel = self.yInput * self.climbSpeed * dt
   end
 end
 
@@ -121,12 +134,14 @@ function Player:setState()
     self.anim = self.animations.climb
   elseif self.isDashing then
     self.state = "dash"
+  elseif self.isLaunching then
+    self.state = "launching"
+    self.anim = self.animations.launch
   elseif self.yVel < 0 then
     self.state = "jump"
     self.anim = self.animations.jump
   elseif self.yVel > 0 then
     self.state = "fall"
-    self.anim = self.animations.fall
   elseif self.xVel == 0 then
     self.state = "idle"
     self.anim = self.animations.idle
@@ -138,21 +153,21 @@ end
 
 function Player:takeDamage(amount)
   self:damageFlash()
-  if self.health.current > 0 then
-    self.health.current = self.health.current - amount
-  else
-    self.health.current = 0
+  self.health.current = self.health.current - amount
+
+  if self.health.current <= 0 then
+    self.health.current = 0 -- Ensure health doesn't go negative
     self:die()
   end
 end
 
-function Player:respawn()
-  if not self.isAlive then
-    self.physics.body:setPosition(self.startX, self.startY)
-    self.health.current = self.health.max
-    self.isAlive = true
-  end
-end
+-- function Player:respawn()
+--   if not self.isAlive then
+--     self.physics.body:setPosition(self.startX, self.startY)
+--     self.health.current = self.health.max
+--     self.isAlive = true
+--   end
+-- end
 
 function Player:die()
   self.isAlive = false
@@ -267,11 +282,17 @@ end
 
 function Player:launch(camera)
   if self.launchRemaining > 0 and not self.isLaunching and not self.isClimbing then
+    if self.sounds.launch:isPlaying() then
+      self.sounds.launch:stop()
+    end
+    self.sounds.launch:play()
     camera:shake(6, 0.2, 60)
     self.launchRemaining = self.launchRemaining - 1
     self.isLaunching = true
     self.launchTimer = self.launchDuration
     self.yVel = -self.launchSpeed
+    self.currentFlameAnim = self.animations.launchFlameStart
+    self.currentFlameAnim:gotoFrame(1)
   end
 end
 
@@ -283,8 +304,16 @@ function Player:updateLaunch(dt)
     else
       self.yVel = -self.launchSpeed
 
-      local progress = self.launchTimer / self.launchDuration
-      self.launchCylinder.height = 40 * progress
+      -- Update the flame animation
+      self.currentFlameAnim:update(dt)
+
+      -- Check if we need to switch from start to loop animation
+      if
+          self.currentFlameAnim == self.animations.launchFlameStart
+          and self.currentFlameAnim.position == #self.currentFlameAnim.frames
+      then
+        self.currentFlameAnim = self.animations.launchFlame
+      end
     end
   end
 end
@@ -319,6 +348,10 @@ function Player:land(collision)
   self.hasWallJump = true
   self.graceTime = self.graceDuration
   self.launchRemaining = 2
+end
+
+function Player:getPosition()
+  return self.physics.body:getPosition()
 end
 
 function Player:syncPhysics()
@@ -357,22 +390,22 @@ function Player:endContact(a, b, collision)
 end
 
 function Player:draw()
-  if self.isLaunching then
-    love.graphics.setColor(unpack(self.launchCylinder.color))
-    love.graphics.rectangle(
-      "fill",
-      self.x - self.launchCylinder.width / 2,
-      self.y + self.height / 2,
-      self.launchCylinder.width,
-      self.launchCylinder.height
-    )
-    -- Reset color after drawing the cylinder
-    love.graphics.setColor(1, 1, 1, 1)
-  end
   local scaleX = self.direction
   love.graphics.setColor(self.color.red, self.color.green, self.color.blue)
-  self.anim:draw(self.spriteSheet, self.x, self.y, 0, scaleX, 1, 16, 16)
+  self.anim:draw(self.playerSheet, self.x, self.y, 0, scaleX, 1, 16, 16)
+  if self.isLaunching and self.currentFlameAnim then
+    love.graphics.setColor(1, 1, 1, 1)
+    self.currentFlameAnim:draw(self.flameSheet, self.x, self.y + self.height / 2, 0, scaleX, 1, 8, 0)
+  end
+
   love.graphics.setColor(1, 1, 1, 1)
+end
+
+function Player:destroy()
+  if self.body then
+    self.body:destroy()
+    self.body = nil
+  end
 end
 
 return Player

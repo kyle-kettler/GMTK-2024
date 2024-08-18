@@ -1,14 +1,13 @@
 local middleclass = require("lib/middleclass")
-
 local Wall = middleclass("Wall")
 
-function Wall:initialize(x, y, width, height)
+function Wall:initialize(world, x, y, width, height)
   self.x = x
   self.y = y
   self.width = width
   self.height = height
   self.physics = {}
-  self.physics.body = love.physics.newBody(World, x + width / 2, y + height / 2, "static")
+  self.physics.body = love.physics.newBody(world, x + width / 2, y + height / 2, "static")
   self.physics.shape = love.physics.newRectangleShape(width, height)
   self.physics.fixture = love.physics.newFixture(self.physics.body, self.physics.shape)
   self.physics.fixture:setUserData({ type = "wall", instance = self })
@@ -19,6 +18,7 @@ function Wall:update(dt)
 end
 
 function Wall:draw()
+  -- You might want to add drawing logic here if you want to visualize the walls
 end
 
 function Wall.beginContact(a, b, collision)
