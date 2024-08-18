@@ -29,6 +29,7 @@ end
 
 function GameState:enter()
   self:reset() -- Reset the state before initializing
+  love.graphics.setFont(Fonts["small"])
 
   -- Clear all existing physics objects
   if self.world then
@@ -163,8 +164,6 @@ function GameState:render()
   self.camera:detach()
 
   self.camera:draw()
-  love.graphics.print(tostring(self.player.coins), 10, 10)
-  love.graphics.print(tostring(self.player.health.current), 20, 20)
   self.gui:draw()
 end
 

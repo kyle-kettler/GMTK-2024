@@ -38,6 +38,7 @@ function GameManager:update(dt)
 end
 
 function GameManager:render()
+  love.graphics.clear()
   self.current:render()
 end
 

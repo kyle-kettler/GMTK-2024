@@ -185,7 +185,7 @@ function Player:unTint(dt)
 end
 
 function Player:incrementCoins()
-  self.coins = self.coins + 1
+  self.coins = self.coins + 10
 end
 
 function Player:move(dt, moveX, moveY)

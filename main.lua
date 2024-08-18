@@ -1,4 +1,5 @@
 love.graphics.setDefaultFilter("nearest", "nearest")
+require("dependencies")
 local Constants = require("constants")
 local GameManager = require("gamemanager")
 local push = require("lib/push")
@@ -17,8 +18,8 @@ local input = baton.new({
     action = { "key:x", "button:x" },
     jump = { "key:space", "button:a" },
     launch = { "key:j", "button:rightshoulder" },
-    gameStart = { "key:return", "button:a"},
-    gameExit = { "key:escape", "button:back"}
+    gameStart = { "key:return", "button:a" },
+    gameExit = { "key:escape", "button:back" },
   },
   pairs = {
     move = { "left", "right", "up", "down" },
@@ -28,10 +29,15 @@ local input = baton.new({
 
 -- Game states
 local states = {
-  main_menu = function() return require("states/mainmenustate"):new(input) end,
-  game = function() return require("states/gamestate"):new(input) end,
-  death = function() return require("states/deathstate"):new(input) end,
-  -- Add more states as needed
+  main_menu = function()
+    return require("states/mainmenustate"):new(input)
+  end,
+  game = function()
+    return require("states/gamestate"):new(input)
+  end,
+  death = function()
+    return require("states/deathstate"):new(input)
+  end,
 }
 
 function love.load()
@@ -42,7 +48,7 @@ function love.load()
   })
 
   gameManager = GameManager:new(states)
-  gameManager:change('main_menu')
+  gameManager:change("main_menu")
 end
 
 function love.update(dt)
@@ -52,6 +58,7 @@ end
 
 function love.draw()
   push:start()
+  love.graphics.clear(0.4, 0.7, 1, 1) -- Light blue
   gameManager:render()
   push:finish()
 end
@@ -60,7 +67,6 @@ function love.resize(w, h)
   push:resize(w, h)
 end
 
--- Forward these callbacks to the current state
 function love.keypressed(key)
   if gameManager.current.keypressed then
     gameManager.current:keypressed(key)

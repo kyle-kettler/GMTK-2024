@@ -9,7 +9,6 @@ local usingGamepad
 
 function MainMenu:initialize(input)
   self.input = input
-  self.font = love.graphics.newFont("assets/fonts/Nippo-Bold.ttf", 32)
   self.sounds = {}
 end
 
@@ -33,10 +32,15 @@ function MainMenu:update(dt)
 end
 
 function MainMenu:render()
-  love.graphics.setFont(self.font)
-  love.graphics.setColor(0.8, 0.8, 1, 1)
+  love.graphics.clear(0.4, 0.7, 1, 1)
+  love.graphics.setColor(1, 1, 1, 1) -- Reset color to white
+
+  love.graphics.setFont(Fonts["large"])
+  love.graphics.setColor(0.1, 0.4, 0.5, 1)
   love.graphics.printf("SCALEBOT 9000", 2, Constants.GAME_HEIGHT / 2 - 60, Constants.GAME_WIDTH, "center")
+
   love.graphics.setColor(1, 1, 1, 1)
+  love.graphics.setFont(Fonts["medium"])
   if usingGamepad then
     love.graphics.printf("Press A", 0, Constants.GAME_HEIGHT / 2 + 64, Constants.GAME_WIDTH, "center")
   elseif not usingGamepad then
