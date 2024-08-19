@@ -24,13 +24,13 @@ end
 function MainMenu:enter()
   buttons = {
     newButton("START GAME", function()
-      gameManager:change("game")
+      gameManager:change("game", {bfl = false})
     end),
     newButton("EXIT", function()
       love.event.quit(0)
     end),
   }
-  
+
   self.sounds.music = love.audio.newSource("assets/audio/music/MegaHyperUltrastorm.mp3", "static")
   -- self.sounds.music:play()
 end
@@ -53,33 +53,33 @@ function MainMenu:render()
   love.graphics.setFont(Fonts["large"])
   love.graphics.setColor(0.1, 0.4, 0.5, 1)
   love.graphics.printf("SCALEBOT 9000", 2, Constants.GAME_HEIGHT / 2 - 100, Constants.GAME_WIDTH, "center")
-  
+
   local buttonWidth = 128
   local vertMargin = 4
   local totalHeight = (buttonHeight + vertMargin) * #buttons
   local cursorY = 0
-  
+
   love.graphics.setFont(Fonts["small"])
   for i, button in ipairs(buttons) do
     local bx = (Constants.GAME_WIDTH * 0.5) - (buttonWidth * 0.5)
     local by = (Constants.GAME_HEIGHT * 0.7) - (totalHeight * 0.5) + cursorY
     local color = { 0.1, 0.4, 0.5, 1 }
-    
+
     if i == selectedButton then
       color = { 0.2, 0.5, 0.6, 1 }
     end
-    
+
     love.graphics.setColor(unpack(color))
     love.graphics.rectangle("fill", bx, by, buttonWidth, buttonHeight)
-    
+
     local font = love.graphics.getFont()
     local textW = font:getWidth(button.text)
     love.graphics.setColor(1, 1, 1, 1) -- Reset color to white
     love.graphics.print(button.text, (Constants.GAME_WIDTH * 0.5) - textW * 0.5, by + 9)
-    
+
     cursorY = cursorY + (buttonHeight + vertMargin)
   end
-  
+
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setFont(Fonts["small"])
   love.graphics.printf(

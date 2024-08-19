@@ -12,7 +12,7 @@ function BFL:initialize(world)
   self.active = false
   self.warmupTime = 0
   self.warmupTimer = 0
-  self.speed = 60
+  self.speed = 30
   self.damageCooldown = 0.1
   self.damageTimer = 0
 

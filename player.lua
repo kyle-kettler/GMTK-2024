@@ -6,12 +6,12 @@ local Player = middleclass("Player")
 
 Player.static.instance = nil
 
-function Player:initialize(world)
+function Player:initialize(world, startX, startY)
   Player.static.instance = self
   self.world = world
   -- Basic properties
-  self.x = 50
-  self.y = Constants.MAP_BOTTOM - 100
+  self.x = startX
+  self.y = startY
   self.startX = self.x
   self.startY = self.y
   self.width = 18
@@ -108,6 +108,7 @@ function Player:setupAnimations()
     run = anim8.newAnimation(self.playerGrid("1-2", 2), 0.1),
     jump = anim8.newAnimation(self.playerGrid("1-3", 3), 0.1, "pauseAtEnd"),
     climb = anim8.newAnimation(self.playerGrid("1-3", 5), 0.2),
+    falling = anim8.newAnimation(self.playerGrid("1-2", 8), 0.2),
     launch = anim8.newAnimation(self.playerGrid("1-4", 7), 0.2),
     launchFlameStart = anim8.newAnimation(self.flameGrid("2-4", 1), 0.1, "pauseAtEnd"),
     launchFlame = anim8.newAnimation(self.flameGrid("1-4", 2), 0.1),
@@ -117,6 +118,10 @@ function Player:setupAnimations()
 end
 
 function Player:update(dt)
+  if not self.physics.body then
+    return
+  end
+
   self:unTint(dt)
   -- self:respawn()
   self:setState()
@@ -146,8 +151,9 @@ function Player:setState()
   elseif self.yVel < 0 then
     self.state = "jump"
     self.anim = self.animations.jump
-  elseif self.yVel > 0 then
+  elseif self.yVel > 600 then
     self.state = "fall"
+    self.anim = self.animations.falling
   elseif self.xVel == 0 then
     self.state = "idle"
     self.anim = self.animations.idle
@@ -208,7 +214,11 @@ function Player:updateInvulnerability(dt)
 end
 
 function Player:die()
-  self.isAlive = false
+  if self.isAlive then
+    self.isAlive = false
+    self:destroy()  -- This will safely destroy the physics body and fixture
+    -- You might want to trigger some death animation or sound here
+  end
 end
 
 function Player:damageFlash()
@@ -222,8 +232,8 @@ function Player:unTint(dt)
   self.color.blue = math.min(self.color.blue + self.color.speed * dt, 1)
 end
 
-function Player:incrementCoins()
-  self.coins = self.coins + 10
+function Player:incrementCoins(points)
+  self.coins = self.coins + points
 end
 
 function Player:addHealth()
@@ -389,15 +399,24 @@ function Player:land(collision)
 end
 
 function Player:getPosition()
-  return self.physics.body:getPosition()
+  if self.physics.body then
+    return self.physics.body:getPosition()
+  end
+  return self.x, self.y  -- Return last known position if body is destroyed
 end
 
 function Player:syncPhysics()
-  self.x, self.y = self.physics.body:getPosition()
-  self.physics.body:setLinearVelocity(self.xVel, self.yVel)
+  if self.physics.body then
+    self.x, self.y = self.physics.body:getPosition()
+    self.physics.body:setLinearVelocity(self.xVel, self.yVel)
+  end
 end
 
 function Player:beginContact(a, b, collision)
+  if not self.physics.fixture then
+    return  -- Exit early if the fixture has been destroyed
+  end
+
   if self.grounded then
     return
   end
@@ -420,6 +439,10 @@ function Player:beginContact(a, b, collision)
 end
 
 function Player:endContact(a, b, collision)
+  if not self.physics.fixture then
+    return  -- Exit early if the fixture has been destroyed
+  end
+
   if a == self.physics.fixture or b == self.physics.fixture then
     if self.currentGroundCollision == collision then
       self.grounded = false
@@ -428,6 +451,10 @@ function Player:endContact(a, b, collision)
 end
 
 function Player:draw()
+  if not self.isVisible or not self.physics.body then
+    return  -- Don't draw if not visible or if body is destroyed
+  end
+
   if self.isVisible then
     local scaleX = self.direction
     love.graphics.setColor(self.color.red, self.color.green, self.color.blue)
@@ -442,10 +469,11 @@ function Player:draw()
 end
 
 function Player:destroy()
-  if self.body then
-    self.body:destroy()
-    self.body = nil
+  if self.physics.body and not self.physics.body:isDestroyed() then
+    self.physics.body:destroy()
   end
+  self.physics.body = nil
+  self.physics.fixture = nil
 end
 
 function Player:drawDebug()

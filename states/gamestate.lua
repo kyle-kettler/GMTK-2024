@@ -6,11 +6,27 @@ local Bolt = require("bolt")
 local Camera = require("lib/camera")
 local Spike = require("spikes")
 local Wall = require("wall")
+local Win = require("winPoint")
 local BFL = require("bfl")
 local GUI = require("gui")
 local sti = require("lib/sti")
 
 local GameState = middleclass("GameState")
+
+local function getPlayerStartPoint(map, checkpointNumber)
+  local playerStartLayer = map.layers.player_start
+  if not playerStartLayer then
+    return nil
+  end
+
+  for _, object in ipairs(playerStartLayer.objects) do
+    if object.properties and object.properties.checkpoint == checkpointNumber then
+      return object
+    end
+  end
+
+  return nil
+end
 
 function GameState:initialize(input)
   self.input = input
@@ -26,9 +42,10 @@ function GameState:reset()
   self.map = nil
   self.world = nil
   self.sounds = {}
+  self.gameWin = nil
 end
 
-function GameState:enter()
+function GameState:enter(params)
   self:reset() -- Reset the state before initializing
   love.graphics.setFont(Fonts["small"])
 
@@ -52,6 +69,11 @@ function GameState:enter()
   self.map:box2d_init(self.world)
   self.map.layers.ground.visible = false
   self.map.layers.walls.visible = false
+  self.map.layers.game_win.visible = false
+
+  self.gameWin = self.map.layers.game_win.objects[1]
+
+  self.winArea = Win:new(self.world, self.gameWin.x, self.gameWin.y, self.gameWin.width, self.gameWin.height)
 
   self.walls = {}
   for _, object in ipairs(self.map.layers.walls.objects) do
@@ -81,9 +103,24 @@ function GameState:enter()
   self.sounds.music:setVolume(0.3)
   -- self.sounds.music:play()
 
-  self.player = Player:new(self.world)
+  local checkpoint = 4
+  local playerStartPoint = getPlayerStartPoint(self.map, checkpoint)
+  local playerX
+  local playerY
+
+  if playerStartPoint then
+    playerX = playerStartPoint.x
+    playerY = playerStartPoint.y
+  end
+
+  self.player = Player:new(self.world, playerX, playerY)
   self.gui = GUI:new(self.player)
-  self.bfl = BFL:new(self.world)
+
+  local bflEnabled = params and params.bfl or false
+  if bflEnabled then
+    self.bfl = BFL:new(self.world)
+  end
+
   self.gui:load()
 
   -- Safely remove all coins
@@ -94,7 +131,7 @@ function GameState:enter()
   end
 
   for _, object in ipairs(self.map.layers.coins.objects) do
-    Coin:new(object.x, object.y, self.world)
+    Coin:new(object.x, object.y, self.world, object.type)
   end
 
   -- Safely remove all coins
@@ -112,12 +149,14 @@ end
 function GameState:update(dt)
   self.world:update(dt)
   self.map:update(dt)
-  self.player:update(dt)
   Coin.updateAll(dt)
   Bolt.updateAll(dt)
   Spike.updateAll(dt)
-  -- self.bfl:update(dt)
   self.gui:update(dt)
+
+  if self.bfl then
+    self.bfl:update(dt)
+  end
 
   for _, wall in ipairs(self.walls) do
     wall:update(dt)
@@ -149,9 +188,18 @@ function GameState:update(dt)
   local mapHeight = self.map.height * self.map.tileheight
   self.camera:setBounds(0, 0, mapWidth, mapHeight)
 
-  if not self.player.isAlive then
-    self.sounds.music:stop()
-    gameManager:change("death")
+  if self.player then
+    if not self.player.isAlive then
+      self:handleDeath()
+      return
+    end
+
+    self.player:update(dt)
+
+    if self.winArea and self.winArea:checkPlayerWin(self.player) then
+      self:handleWin()
+      return
+    end
   end
 end
 
@@ -173,7 +221,10 @@ function GameState:render()
   Coin.drawAll()
   Bolt.drawAll()
   Spike.drawAll()
-  self.bfl:draw()
+
+  if self.bfl then
+    self.bfl:draw()
+  end
 
   -- debug draws for collisions
   -- Spike.drawAllDebug()
@@ -225,22 +276,44 @@ function GameState:drawTextObject(obj)
   love.graphics.draw(text, math.floor(x), math.floor(y))
 end
 
+function GameState:handleDeath()
+  if not self.gameOver then
+    self.gameOver = true
+    if self.sounds.music then
+      self.sounds.music:stop()
+    end
+    gameManager:change("death")
+  end
+end
+
+function GameState:handleWin()
+  if not self.gameOver then
+    self.gameOver = true
+    if self.sounds.music then
+      self.sounds.music:stop()
+    end
+    if self.player then
+      self.player:destroy()
+      self.player = nil
+    end
+    gameManager:change("death")
+  end
+end
+
 function GameState:exit()
-  -- Clean up all game objects
   if self.world then
+    if self.player then
+      self.player:destroy()
+      self.player = nil
+    end
     self.world:destroy()
+    self.world = nil
   end
   if Coin.removeAll then
     Coin.removeAll()
   end
   if Spike.removeAll then
     Spike.removeAll()
-  end
-  if self.player and self.player.destroy then
-    self.player:destroy()
-  end
-  if self.bfl and self.bfl.destroy then
-    self.bfl:destroy()
   end
   if self.sounds.music then
     self.sounds.music:stop()
@@ -258,6 +331,9 @@ function GameState:beginContact(a, b, collision)
     return
   end
   if Bolt.beginContact(a, b, collision) then
+    return
+  end
+  if Win.beginContact(a, b, collision) then
     return
   end
   if BFL.beginContact(a, b, collision) then

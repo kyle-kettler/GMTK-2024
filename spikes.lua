@@ -1,11 +1,11 @@
 local middleclass = require("lib/middleclass")
-local Player = require("player") -- Make sure this path is correct
+local anim8 = require("lib/anim8")
 
 local Spike = middleclass("Spike")
 
-Spike.static.img = love.graphics.newImage("assets/sprites/spikes.png")
-Spike.static.width = Spike.static.img:getWidth()
-Spike.static.height = Spike.static.img:getHeight()
+Spike.static.spriteSheet = love.graphics.newImage("assets/sprites/spikes.png")
+Spike.static.width = 32
+Spike.static.height = 32
 
 Spike.static.ActiveSpikes = {}
 
@@ -16,10 +16,13 @@ function Spike:initialize(x, y, rotation, world)
   self.damage = 1
   self.physics = {}
 
-  local colliderWidth = Spike.width
+  local colliderWidth = Spike.width - 6
   local colliderHeight = Spike.height / 2
   local offsetX = math.sin(self.rotation) * (Spike.height / 4 - colliderHeight)
   local offsetY = -math.cos(self.rotation) * (Spike.height / 4 - colliderHeight)
+
+  self.grid = anim8.newGrid(32, 32, Spike.spriteSheet:getWidth(), Spike.spriteSheet:getHeight())
+  self.animation = anim8.newAnimation(self.grid("1-4", 1), 0.15)
 
   self.physics.body = love.physics.newBody(world, self.x + offsetX, self.y + offsetY, "static")
   self.physics.body:setAngle(self.rotation)
@@ -33,7 +36,14 @@ function Spike:initialize(x, y, rotation, world)
 end
 
 function Spike:draw()
-  love.graphics.draw(Spike.img, self.x, self.y, self.rotation, 1, 1, Spike.width / 2, Spike.height / 2)
+  if self.physics.body then
+    local x, y = self.physics.body:getPosition()
+    love.graphics.push()
+    love.graphics.translate(x, y)
+    love.graphics.rotate(self.rotation)
+    self.animation:draw(Spike.spriteSheet, 0, -Spike.height * 0.4, 0, 1, 1, Spike.width/2, 0)
+    love.graphics.pop()
+  end
 end
 
 function Spike.drawAll()
@@ -43,7 +53,7 @@ function Spike.drawAll()
 end
 
 function Spike:update(dt)
-  -- Update logic if needed
+  self.animation:update(dt)
 end
 
 function Spike.updateAll(dt)
