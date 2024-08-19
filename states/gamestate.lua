@@ -142,7 +142,7 @@ function GameState:update(dt)
   self.camera:update(dt)
   self.camera:follow(self.player.x, self.player.y)
   self.camera:setFollowStyle("LOCKON")
-  self.camera:setFollowLerp(0.1)
+  self.camera:setFollowLerp(0.4)
 
   -- Set camera bounds to map size
   local mapWidth = self.map.width * self.map.tilewidth

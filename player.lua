@@ -22,7 +22,7 @@ function Player:initialize(world)
   self.maxSpeed = 300
   self.acceleration = 4000
   self.friction = 4000
-  self.gravity = 1700
+  self.gravity = 1500
   self.grounded = false
 
   self.jumpAmount = -500
@@ -286,7 +286,7 @@ function Player:jump()
     self:stopClimbing()
     self.jumpCount = self.maxJumps - 1 -- Reset jump count, but subtract 1 for the jump we just performed
   elseif self.jumpCount > 0 then
-    self.yVel = self.jumpAmount * 0.7 -- Slightly weaker jump for mid-air jumps
+    self.yVel = self.jumpAmount * 0.8 -- Slightly weaker jump for mid-air jumps
     self.jumpCount = self.jumpCount - 1
   end
 end
