@@ -4,7 +4,7 @@ local Player = require("player")
 
 local Coin = middleclass("Coin")
 
-Coin.static.spriteSheet = love.graphics.newImage("assets/sprites/coin.png")
+Coin.static.spriteSheet = love.graphics.newImage("assets/sprites/gem_and_bolt.png")
 Coin.static.width = 11
 Coin.static.height = 11
 Coin.static.ActiveCoins = {}
@@ -20,8 +20,8 @@ function Coin:initialize(x, y, world)
   self.randomTimeOffset = math.random(0, 100)
   self.toBeRemoved = false
   self.isAttracting = false  -- New flag to track if the coin is attracting
-  self.grid = anim8.newGrid(11, 11, Coin.spriteSheet:getWidth(), Coin.spriteSheet:getHeight())
-  self.animation = anim8.newAnimation(self.grid("1-4", 1), 0.15)
+  self.grid = anim8.newGrid(32, 32, Coin.spriteSheet:getWidth(), Coin.spriteSheet:getHeight())
+  self.animation = anim8.newAnimation(self.grid("1-3", 1), 0.15)
   self.physics = {}
   self.physics.body = love.physics.newBody(world, self.x, self.y, "dynamic")
   self.physics.shape = love.physics.newRectangleShape(Coin.width, Coin.height)

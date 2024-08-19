@@ -10,12 +10,12 @@ function Player:initialize(world)
   Player.static.instance = self
   self.world = world
   -- Basic properties
-  self.x = Constants.GAME_WIDTH / 2
-  self.y = Constants.MAP_BOTTOM - 150
+  self.x = 50
+  self.y = Constants.MAP_BOTTOM - 100
   self.startX = self.x
   self.startY = self.y
-  self.width = 24
-  self.height = 30
+  self.width = 18
+  self.height = 26
   self.direction = 1
   self.xVel = 0
   self.yVel = 0
@@ -23,22 +23,32 @@ function Player:initialize(world)
   self.acceleration = 4000
   self.friction = 4000
   self.gravity = 1700
+  self.grounded = false
+
   self.jumpAmount = -500
+  self.jumpCount = 2
+  self.maxJumps = 2
+  self.graceTime = 0
+  self.graceDuration = 0.1
+
   self.isMoving = false
+
+  self.isInvulnerable = false
+  self.invulnerabilityDuration = 1
+  self.invulnerabilityTimer = 0
+  self.flashInterval = 0.2
+  self.flashTimer = 0
+  self.isVisible = true
 
   -- Health and state
   self.isAlive = true
-  self.health = { current = 6, max = 6 }
+  self.health = { current = 3, max = 6 }
 
   -- Visual properties
   self.color = { red = 1, green = 1, blue = 1, speed = 5 }
 
   -- Game mechanics
   self.coins = 0
-  self.grounded = false
-  self.hasDoubleJump = true
-  self.graceTime = 0
-  self.graceDuration = 0.1
 
   -- Dash properties
   self.isDashing = false
@@ -56,10 +66,10 @@ function Player:initialize(world)
   self.wallSlideSpeed = 50
   self.wallStickTime = 0.2
   self.wallStickTimer = 0
-  self.maxClimbTime = 1
+  self.maxClimbTime = 0.7
   self.climbTimer = 0
-  self.wallJumpForce = { x = 700, y = -500 }
-  self.hasWallJump = false
+  self.wallJumpForce = { x = 800, y = -200 }
+  self.hasWallJump = true
 
   -- Launch properties
   self.isLaunching = false
@@ -67,11 +77,6 @@ function Player:initialize(world)
   self.launchDuration = 0.4
   self.launchSpeed = 350
   self.launchTimer = 0
-  self.launchCylinder = {
-    width = 15,
-    height = 30,
-    color = { 1, 0.5, 0, 0.7 }, -- Orange with some transparency
-  }
 
   -- Audio properties
   self.sounds = {}
@@ -123,6 +128,7 @@ function Player:update(dt)
   self:updateDash(dt)
   self:updateWallClimb(dt)
   self:updateLaunch(dt)
+  self:updateInvulnerability(dt)
   if self.isClimbing then
     self.yVel = self.yInput * self.climbSpeed * dt
   end
@@ -152,22 +158,54 @@ function Player:setState()
 end
 
 function Player:takeDamage(amount)
-  self:damageFlash()
-  self.health.current = self.health.current - amount
+  if not self.isInvulnerable then
+    self:damageFlash()
+    self.health.current = self.health.current - amount
 
-  if self.health.current <= 0 then
-    self.health.current = 0 -- Ensure health doesn't go negative
-    self:die()
+    self.grounded = false
+    self.isClimbing = false
+    self.isLaunching = false
+    -- Set knockback values
+    local verticalKnockback = -300
+    local horizontalKnockback = 600
+
+    self.yVel = verticalKnockback
+    self.xVel = -self.direction * horizontalKnockback
+
+
+    -- Start invulnerability
+    self:startInvulnerability()
+
+    if self.health.current <= 0 then
+      self.health.current = 0
+      self:die()
+    end
   end
 end
 
--- function Player:respawn()
---   if not self.isAlive then
---     self.physics.body:setPosition(self.startX, self.startY)
---     self.health.current = self.health.max
---     self.isAlive = true
---   end
--- end
+function Player:startInvulnerability()
+  self.isInvulnerable = true
+  self.invulnerabilityTimer = self.invulnerabilityDuration
+  self.flashTimer = self.flashInterval
+  self.isVisible = true
+end
+
+function Player:updateInvulnerability(dt)
+  if self.isInvulnerable then
+    self.invulnerabilityTimer = self.invulnerabilityTimer - dt
+    self.flashTimer = self.flashTimer - dt
+
+    if self.flashTimer <= 0 then
+      self.isVisible = not self.isVisible
+      self.flashTimer = self.flashInterval
+    end
+
+    if self.invulnerabilityTimer <= 0 then
+      self.isInvulnerable = false
+      self.isVisible = true
+    end
+  end
+end
 
 function Player:die()
   self.isAlive = false
@@ -186,6 +224,10 @@ end
 
 function Player:incrementCoins()
   self.coins = self.coins + 10
+end
+
+function Player:addHealth()
+  self.health.current = self.health.current + 1
 end
 
 function Player:move(dt, moveX, moveY)
@@ -228,6 +270,7 @@ end
 function Player:startClimbing()
   self.isClimbing = true
   self.climbTimer = 0
+  self.jumpCount = self.maxJumps
 end
 
 function Player:stopClimbing()
@@ -236,19 +279,15 @@ end
 
 function Player:jump()
   self.isMoving = true
-  if self.grounded or self.graceTime > 0 then
+  if self.grounded or self.graceTime > 0 or self.isClimbing then
     self.yVel = self.jumpAmount
     self.grounded = false
     self.graceTime = 0
-  elseif self.isClimbing and self.hasWallJump then
-    -- Wall jump
-    self.xVel = -self.direction * self.wallJumpForce.x
-    self.yVel = self.wallJumpForce.y
-    self.hasWallJump = false
     self:stopClimbing()
-  elseif self.hasDoubleJump then
-    self.hasDoubleJump = false
-    self.yVel = self.jumpAmount
+    self.jumpCount = self.maxJumps - 1 -- Reset jump count, but subtract 1 for the jump we just performed
+  elseif self.jumpCount > 0 then
+    self.yVel = self.jumpAmount * 0.7 -- Slightly weaker jump for mid-air jumps
+    self.jumpCount = self.jumpCount - 1
   end
 end
 
@@ -344,8 +383,7 @@ function Player:land(collision)
   self.yVel = 0
   self.grounded = true
   self.isMoving = false
-  self.hasDoubleJump = true
-  self.hasWallJump = true
+  self.jumpCount = self.maxJumps
   self.graceTime = self.graceDuration
   self.launchRemaining = 2
 end
@@ -390,12 +428,14 @@ function Player:endContact(a, b, collision)
 end
 
 function Player:draw()
-  local scaleX = self.direction
-  love.graphics.setColor(self.color.red, self.color.green, self.color.blue)
-  self.anim:draw(self.playerSheet, self.x, self.y, 0, scaleX, 1, 16, 16)
-  if self.isLaunching and self.currentFlameAnim then
-    love.graphics.setColor(1, 1, 1, 1)
-    self.currentFlameAnim:draw(self.flameSheet, self.x, self.y + self.height / 2, 0, scaleX, 1, 8, 0)
+  if self.isVisible then
+    local scaleX = self.direction
+    love.graphics.setColor(self.color.red, self.color.green, self.color.blue)
+    self.anim:draw(self.playerSheet, self.x, self.y, 0, scaleX, 1, 18, 18)
+    if self.isLaunching and self.currentFlameAnim then
+      love.graphics.setColor(1, 1, 1, 1)
+      self.currentFlameAnim:draw(self.flameSheet, self.x, self.y + self.height / 2 , 0, scaleX, 1, 10, -1)
+    end
   end
 
   love.graphics.setColor(1, 1, 1, 1)
@@ -406,6 +446,27 @@ function Player:destroy()
     self.body:destroy()
     self.body = nil
   end
+end
+
+function Player:drawDebug()
+  love.graphics.push("all")
+
+  -- Draw body
+  love.graphics.setColor(0, 1, 0, 0.5) -- Green for body
+  love.graphics.circle("fill", self.x, self.y, 5)
+  love.graphics.print("Body", self.x + 10, self.y - 10)
+
+  -- Draw fixture/shape
+  love.graphics.setColor(1, 0, 0, 0.5) -- Red for fixture/shape
+  love.graphics.rectangle("line", self.x - self.width / 2, self.y - self.height / 2, self.width, self.height)
+  love.graphics.print("Fixture", self.x - self.width / 2, self.y - self.height / 2 - 20)
+
+  -- Draw velocity vector
+  love.graphics.setColor(0, 0, 1, 0.7) -- Blue for velocity
+  love.graphics.line(self.x, self.y, self.x + self.xVel / 10, self.y + self.yVel / 10)
+  love.graphics.print("Velocity", self.x + self.xVel / 10 + 5, self.y + self.yVel / 10 + 5)
+
+  love.graphics.pop()
 end
 
 return Player

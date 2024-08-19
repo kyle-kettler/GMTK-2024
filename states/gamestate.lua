@@ -2,6 +2,7 @@ local middleclass = require("lib/middleclass")
 local Constants = require("constants")
 local Player = require("player")
 local Coin = require("coin")
+local Bolt = require("bolt")
 local Camera = require("lib/camera")
 local Spike = require("spikes")
 local Wall = require("wall")
@@ -65,7 +66,7 @@ function GameState:enter()
   end
 
   for _, object in ipairs(self.map.layers.spikes.objects) do
-    Spike:new(object.x, object.y, self.world)
+    Spike:new(object.x, object.y, math.rad(object.rotation), self.world)
   end
 
   local mapWidth = self.map.width * self.map.tilewidth
@@ -92,10 +93,20 @@ function GameState:enter()
     print("Warning: Coin.removeAll is not defined")
   end
 
-  Coin:new(200, 300, self.world)
-  Coin:new(400, 300, self.world)
-  Coin:new(500, 300, self.world)
-  Coin:new(550, 300, self.world)
+  for _, object in ipairs(self.map.layers.coins.objects) do
+    Coin:new(object.x, object.y, self.world)
+  end
+
+  -- Safely remove all coins
+  if Bolt.removeAll then
+    Bolt.removeAll()
+  else
+    print("Warning: Coin.removeAll is not defined")
+  end
+
+  for _, object in ipairs(self.map.layers.bolts.objects) do
+    Bolt:new(object.x, object.y, self.world)
+  end
 end
 
 function GameState:update(dt)
@@ -103,6 +114,7 @@ function GameState:update(dt)
   self.map:update(dt)
   self.player:update(dt)
   Coin.updateAll(dt)
+  Bolt.updateAll(dt)
   Spike.updateAll(dt)
   -- self.bfl:update(dt)
   self.gui:update(dt)
@@ -118,9 +130,9 @@ function GameState:update(dt)
     self.player:jump()
   end
 
-  if self.input:pressed("action") then
-    self.player:dash()
-  end
+  -- if self.input:pressed("action") then
+  --   self.player:dash()
+  -- end
 
   if self.input:pressed("launch") then
     self.player:launch(self.camera)
@@ -129,7 +141,8 @@ function GameState:update(dt)
   -- Update camera to follow player
   self.camera:update(dt)
   self.camera:follow(self.player.x, self.player.y)
-  self.camera:setFollowStyle("PLATFORMER")
+  self.camera:setFollowStyle("LOCKON")
+  self.camera:setFollowLerp(0.1)
 
   -- Set camera bounds to map size
   local mapWidth = self.map.width * self.map.tilewidth
@@ -158,13 +171,58 @@ function GameState:render()
 
   self.player:draw()
   Coin.drawAll()
+  Bolt.drawAll()
   Spike.drawAll()
   self.bfl:draw()
+
+  -- debug draws for collisions
+  -- Spike.drawAllDebug()
+  -- self.player:drawDebug()
+
+  -- Draw text objects
+  self:drawTextObjects()
 
   self.camera:detach()
 
   self.camera:draw()
   self.gui:draw()
+end
+
+function GameState:drawTextObjects()
+  local tutorial_layer = self.map.layers["tutorial"]
+  if tutorial_layer and tutorial_layer.objects then
+    for i, obj in ipairs(tutorial_layer.objects) do
+      if obj.shape == "text" then
+        self:drawTextObject(obj)
+      end
+    end
+  else
+  end
+end
+
+function GameState:drawTextObject(obj)
+  love.graphics.setColor(1, 1, 1, 0.35)
+
+  local font = Fonts["small"]
+  love.graphics.setFont(font)
+
+  local text = love.graphics.newText(font, obj.text)
+  local x, y = obj.x * self.camera.scale, obj.y * self.camera.scale
+
+  -- Handle text alignment
+  if obj.halign == "center" then
+    x = x + obj.width / 2 - text:getWidth() / 2
+  elseif obj.halign == "right" then
+    x = x + obj.width - text:getWidth()
+  end
+
+  if obj.valign == "center" then
+    y = y + obj.height / 2 - text:getHeight() / 2
+  elseif obj.valign == "bottom" then
+    y = y + obj.height - text:getHeight()
+  end
+
+  love.graphics.draw(text, math.floor(x), math.floor(y))
 end
 
 function GameState:exit()
@@ -199,15 +257,24 @@ function GameState:beginContact(a, b, collision)
   if Wall.beginContact(a, b, collision) then
     return
   end
-  if self.bfl.beginContact(a, b, collision) then
+  if Bolt.beginContact(a, b, collision) then
     return
   end
-  self.player:beginContact(a, b, collision)
+  if BFL.beginContact(a, b, collision) then
+    return
+  end
+  if self.player and self.player.beginContact then
+    self.player:beginContact(a, b, collision)
+  end
 end
 
 function GameState:endContact(a, b, collision)
-  Wall.endContact(a, b, collision)
-  self.player:endContact(a, b, collision)
+  if Wall.endContact(a, b, collision) then
+    return
+  end
+  if self.player and self.player.endContact then
+    self.player:endContact(a, b, collision)
+  end
 end
 
 return GameState

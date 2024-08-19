@@ -6,7 +6,6 @@ local push = require("lib/push")
 local baton = require("lib/baton")
 
 local windowWidth, windowHeight = love.window.getDesktopDimensions()
-gameManager = nil
 
 -- Input configuration
 local input = baton.new({
@@ -17,9 +16,10 @@ local input = baton.new({
     down = { "key:down", "key:s", "axis:lefty+", "button:dpdown" },
     action = { "key:x", "button:x" },
     jump = { "key:space", "button:a" },
-    launch = { "key:j", "button:rightshoulder" },
+    launch = { "key:c", "button:rightshoulder" },
     gameStart = { "key:return", "button:a" },
     gameExit = { "key:escape", "button:back" },
+    select = { "key:return", "button:a" },
   },
   pairs = {
     move = { "left", "right", "up", "down" },
