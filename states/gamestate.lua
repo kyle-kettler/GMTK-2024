@@ -118,7 +118,7 @@ function GameState:enter(params)
   self.sounds.music:setVolume(0.3)
   -- self.sounds.music:play()
 
-  local checkpoint = 3
+  local checkpoint = 1
   local playerStartPoint = getPlayerStartPoint(self.map, checkpoint)
   local playerX
   local playerY

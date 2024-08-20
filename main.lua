@@ -1,11 +1,15 @@
+package.path = package.path .. ";?.lua"
+
 love.graphics.setDefaultFilter("nearest", "nearest")
-require("dependencies")
+
+local dependencies = require("dependencies")
 local Constants = require("constants")
-local GameManager = require("gamemanager")
-local push = require("lib/push")
+local GameManager = require("GameManager")
+-- local push = require("lib/push")
 local baton = require("lib/baton")
 
 local windowWidth, windowHeight = love.window.getDesktopDimensions()
+local GAME_WIDTH, GAME_HEIGHT = Constants.GAME_WIDTH, Constants.GAME_HEIGHT
 
 -- Input configuration
 local input = baton.new({
@@ -44,7 +48,15 @@ local states = {
 }
 
 function love.load()
-  push:setupScreen(Constants.GAME_WIDTH, Constants.GAME_HEIGHT, windowWidth, windowHeight, {
+  -- [[
+  -- Use this for HTML builds
+  -- Remember to comment out push from draw and resize
+  -- ]]
+  -- love.window.setMode(GAME_WIDTH, GAME_HEIGHT, {
+  --   vsync = true,
+  --   resizable = false,
+  -- })
+  push:setupScreen(GAME_WIDTH, GAME_HEIGHT, windowWidth, windowHeight, {
     vsync = true,
     fullscreen = false,
     resizable = true,

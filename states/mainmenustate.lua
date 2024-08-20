@@ -1,6 +1,7 @@
 local middleclass = require("lib/middleclass")
 local sone = require("lib/sone")
 local Constants = require("constants")
+
 local MainMenu = middleclass("MainMenu")
 
 local buttonHeight = 24
@@ -29,7 +30,6 @@ function MainMenu:enter()
       love.event.quit(0)
     end),
   }
-
   self.sounds.music = love.audio.newSource("assets/audio/music/MegaHyperUltrastorm.mp3", "static")
   -- self.sounds.music:play()
 end
@@ -48,6 +48,7 @@ end
 
 function MainMenu:render()
   love.graphics.clear(0.4, 0.7, 1, 1)
+  
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setFont(Fonts["large"])
   love.graphics.setColor(0.1, 0.4, 0.5, 1)
@@ -62,8 +63,8 @@ function MainMenu:render()
   for i, button in ipairs(buttons) do
     local bx = (Constants.GAME_WIDTH * 0.5) - (buttonWidth * 0.5)
     local by = (Constants.GAME_HEIGHT * 0.7) - (totalHeight * 0.5) + cursorY
-    local color = { 0.1, 0.4, 0.5, 1 }
 
+    local color = { 0.1, 0.4, 0.5, 1 }
     if i == selectedButton then
       color = { 0.2, 0.5, 0.6, 1 }
     end

@@ -1,12 +1,11 @@
 local middleclass = require("lib/middleclass")
 local anim8 = require("lib/anim8")
-local Player = require("player")
 
 local Fuel = middleclass("Fuel")
 
 Fuel.static.spriteSheet = love.graphics.newImage("assets/sprites/fuel.png")
-Fuel.static.width = 11
-Fuel.static.height = 11
+Fuel.static.width = 24
+Fuel.static.height = 32
 Fuel.static.ActiveFuel = {}
 Fuel.static.collectedCount = 0
 Fuel.static.respawnTime = 8
