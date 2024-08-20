@@ -36,6 +36,9 @@ local states = {
   main_menu = function()
     return require("states/mainmenustate"):new(input)
   end,
+  intro = function()
+    return require("states/introstate"):new(input)
+  end,
   game = function()
     return require("states/gamestate"):new(input)
   end,

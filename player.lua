@@ -81,8 +81,18 @@ function Player:initialize(world, startX, startY)
 
   -- Audio properties
   self.sounds = {}
-  self.sounds.launch = love.audio.newSource("assets/audio/launch.mp3", "static")
+  self.sounds.launch = Sounds["launch"]
   self.sounds.launch:setVolume(1.0)
+  self.sounds.jump = Sounds["jump"]
+  self.sounds.jump:setVolume(1.0)
+  self.sounds.health = Sounds["health"]
+  self.sounds.health:setVolume(1.0)
+  self.sounds.coin = Sounds["gem"]
+  self.sounds.coin:setVolume(1.0)
+  self.sounds.fuel = Sounds["fuel"]
+  self.sounds.fuel:setVolume(1.0)
+  self.sounds.hit = Sounds["damage"]
+  self.sounds.hit:setVolume(1.0)
 
   self.state = "idle"
 
@@ -166,6 +176,10 @@ end
 
 function Player:takeDamage(amount)
   if not self.isInvulnerable then
+    if self.sounds.hit:isPlaying() then
+      self.sounds.hit:stop()
+    end
+    self.sounds.hit:play()
     self:damageFlash()
     self.health.current = self.health.current - amount
 
@@ -233,16 +247,28 @@ function Player:unTint(dt)
 end
 
 function Player:incrementCoins(points)
+  if self.sounds.coin:isPlaying() then
+    self.sounds.coin:stop()
+  end
+  self.sounds.coin:play()
   self.coins = self.coins + points
 end
 
 function Player:addFuel(points)
+  if self.sounds.fuel:isPlaying() then
+    self.sounds.fuel:stop()
+  end
+  self.sounds.fuel:play()
   if self.launchRemaining < self.maxLaunch then
     self.launchRemaining = self.launchRemaining + points
   end
 end
 
 function Player:addHealth()
+  if self.sounds.health:isPlaying() then
+    self.sounds.health:stop()
+  end
+  self.sounds.health:play()
   self.health.current = self.health.current + 1
 end
 
@@ -294,6 +320,10 @@ function Player:stopClimbing()
 end
 
 function Player:jump()
+  if self.sounds.jump:isPlaying() then
+    self.sounds.jump:stop()
+  end
+  self.sounds.jump:play()
   self.isMoving = true
   if self.grounded or self.graceTime > 0 or self.isClimbing then
     self.yVel = self.jumpAmount

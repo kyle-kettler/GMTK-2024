@@ -8,7 +8,6 @@ local usingGamepad
 
 function DeathState:initialize(input)
   self.input = input
-  self.font = love.graphics.newFont("assets/fonts/Nippo-Bold.ttf", 32)
   self.sounds = {}
 end
 
@@ -29,7 +28,7 @@ function DeathState:update(dt)
 end
 
 function DeathState:render()
-  love.graphics.setFont(self.font)
+  love.graphics.setFont(Fonts["large"])
   love.graphics.setColor(1, 0, 0, 1)
   love.graphics.printf("YOU DIED", 2, Constants.GAME_HEIGHT / 2 - 60, Constants.GAME_WIDTH, "center")
   love.graphics.setColor(1, 1, 1, 1)

@@ -15,6 +15,8 @@ local sti = require("lib/sti")
 
 local GameState = middleclass("GameState")
 
+local coins
+
 local function getPlayerStartPoint(map, checkpointNumber)
   local playerStartLayer = map.layers.player_start
   if not playerStartLayer then
@@ -113,12 +115,7 @@ function GameState:enter(params)
   self.camera = Camera(cameraStartX, cameraStartY, Constants.GAME_WIDTH, Constants.GAME_HEIGHT)
   self.camera.scale = 1
 
-  self.sounds.music = love.audio.newSource("assets/audio/music/MegaHyperUltrastorm.mp3", "stream")
-  self.sounds.music:setLooping(true)
-  self.sounds.music:setVolume(0.3)
-  -- self.sounds.music:play()
-
-  local checkpoint = 1
+  local checkpoint = 4
   local playerStartPoint = getPlayerStartPoint(self.map, checkpoint)
   local playerX
   local playerY
@@ -187,6 +184,9 @@ function GameState:update(dt)
   for _, wall in ipairs(self.walls) do
     wall:update(dt)
   end
+ if self.winArea then
+    self.winArea:update(dt)
+  end
 
   local moveX, moveY = self.input:get("move")
   self.player:move(dt, moveX, moveY)
@@ -227,6 +227,8 @@ function GameState:update(dt)
       return
     end
   end
+
+  coins = self.player.coins
 end
 
 function GameState:render()
@@ -248,6 +250,10 @@ function GameState:render()
   Bolt.drawAll()
   Fuel.drawAll()
   Spike.drawAll()
+
+  if self.winArea then
+    self.winArea:draw()
+  end
   for _, zapper in ipairs(self.zappers) do
     zapper:draw()
   end
@@ -329,7 +335,7 @@ function GameState:handleWin()
       self.player:destroy()
       self.player = nil
     end
-    gameManager:change("win")
+    gameManager:change("win", { coins = coins })
   end
 end
 
