@@ -1,5 +1,5 @@
 {
-    "activeFile": "",
+    "activeFile": "TiledMap.tmx",
     "expandedProjectPaths": [
     ],
     "file.lastUsedOpenFilter": "All Files (*)",
@@ -7,17 +7,54 @@
         "": {
             "scaleInDock": 3
         },
+        "TiledMap.tmx": {
+            "scale": 4,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 499.375,
+                "y": 164.75
+            }
+        },
         "TiledMap.tmx#azpper tracks": {
             "scaleInEditor": 8
+        },
+        "TiledMap.tmx#crane": {
+            "scaleInDock": 1
+        },
+        "TiledMap.tmx#fade_tileset": {
+            "scaleInDock": 2
+        },
+        "TiledMap.tmx#filler-tiles": {
+            "scaleInDock": 4
+        },
+        "TiledMap.tmx#input_prompts": {
+            "scaleInDock": 1
+        },
+        "TiledMap.tmx#platform": {
+            "scaleInDock": 1
+        },
+        "TiledMap.tmx#rocket": {
+            "scaleInDock": 1
+        },
+        "TiledMap.tmx#tiles": {
+            "scaleInDock": 1
+        },
+        "TiledMap.tmx#track": {
+            "scaleInDock": 3
+        },
+        "TiledMap.tmx#track2": {
+            "scaleInDock": 3
         }
     },
     "last.exportedFilePath": "/Users/kylekettler/repos/gmtk-2024/assets/maps",
     "last.imagePath": "/Users/kylekettler/repos/gmtk-2024/tiled/tiles",
     "map.lastUsedExportFilter": "Lua files (*.lua)",
     "openFiles": [
+        "TiledMap.tmx"
     ],
     "project": "gmtk_2024.tiled-project",
     "recentFiles": [
+        "TiledMap.tmx"
     ],
     "tileset.embedInMap": true
 }
