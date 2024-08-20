@@ -51,7 +51,7 @@ ignore_list = [
     # Git
     "^.git.*",
     "^.DS_STORE",
-true
+
     # Binary files
     ".zip$",
     ".tar.gz$",
