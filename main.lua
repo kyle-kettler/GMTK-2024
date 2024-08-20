@@ -38,6 +38,9 @@ local states = {
   death = function()
     return require("states/deathstate"):new(input)
   end,
+  win = function()
+    return require("states/winstate"):new(input)
+  end,
 }
 
 function love.load()

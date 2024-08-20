@@ -73,7 +73,8 @@ function Player:initialize(world, startX, startY)
 
   -- Launch properties
   self.isLaunching = false
-  self.launchRemaining = 2
+  self.launchRemaining = 0
+  self.maxLaunch = 4
   self.launchDuration = 0.4
   self.launchSpeed = 350
   self.launchTimer = 0
@@ -178,7 +179,6 @@ function Player:takeDamage(amount)
     self.yVel = verticalKnockback
     self.xVel = -self.direction * horizontalKnockback
 
-
     -- Start invulnerability
     self:startInvulnerability()
 
@@ -216,7 +216,7 @@ end
 function Player:die()
   if self.isAlive then
     self.isAlive = false
-    self:destroy()  -- This will safely destroy the physics body and fixture
+    self:destroy() -- This will safely destroy the physics body and fixture
     -- You might want to trigger some death animation or sound here
   end
 end
@@ -234,6 +234,12 @@ end
 
 function Player:incrementCoins(points)
   self.coins = self.coins + points
+end
+
+function Player:addFuel(points)
+  if self.launchRemaining < self.maxLaunch then
+    self.launchRemaining = self.launchRemaining + points
+  end
 end
 
 function Player:addHealth()
@@ -395,14 +401,13 @@ function Player:land(collision)
   self.isMoving = false
   self.jumpCount = self.maxJumps
   self.graceTime = self.graceDuration
-  self.launchRemaining = 2
 end
 
 function Player:getPosition()
   if self.physics.body then
     return self.physics.body:getPosition()
   end
-  return self.x, self.y  -- Return last known position if body is destroyed
+  return self.x, self.y -- Return last known position if body is destroyed
 end
 
 function Player:syncPhysics()
@@ -414,7 +419,7 @@ end
 
 function Player:beginContact(a, b, collision)
   if not self.physics.fixture then
-    return  -- Exit early if the fixture has been destroyed
+    return -- Exit early if the fixture has been destroyed
   end
 
   if self.grounded then
@@ -440,7 +445,7 @@ end
 
 function Player:endContact(a, b, collision)
   if not self.physics.fixture then
-    return  -- Exit early if the fixture has been destroyed
+    return -- Exit early if the fixture has been destroyed
   end
 
   if a == self.physics.fixture or b == self.physics.fixture then
@@ -452,7 +457,7 @@ end
 
 function Player:draw()
   if not self.isVisible or not self.physics.body then
-    return  -- Don't draw if not visible or if body is destroyed
+    return -- Don't draw if not visible or if body is destroyed
   end
 
   if self.isVisible then
@@ -461,7 +466,7 @@ function Player:draw()
     self.anim:draw(self.playerSheet, self.x, self.y, 0, scaleX, 1, 18, 18)
     if self.isLaunching and self.currentFlameAnim then
       love.graphics.setColor(1, 1, 1, 1)
-      self.currentFlameAnim:draw(self.flameSheet, self.x, self.y + self.height / 2 , 0, scaleX, 1, 10, -1)
+      self.currentFlameAnim:draw(self.flameSheet, self.x, self.y + self.height / 2, 0, scaleX, 1, 10, -1)
     end
   end
 

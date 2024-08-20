@@ -1,11 +1,13 @@
 local middleclass = require("lib/middleclass")
 local Constants = require("constants")
+local Camera = require("lib/camera")
+local Wall = require("wall")
 local Player = require("player")
 local Coin = require("coin")
+local Fuel = require("fuel")
 local Bolt = require("bolt")
-local Camera = require("lib/camera")
 local Spike = require("spikes")
-local Wall = require("wall")
+local Zapper = require("zapper")
 local Win = require("winPoint")
 local BFL = require("bfl")
 local GUI = require("gui")
@@ -43,6 +45,7 @@ function GameState:reset()
   self.world = nil
   self.sounds = {}
   self.gameWin = nil
+  self.zappers = {}
 end
 
 function GameState:enter(params)
@@ -61,6 +64,8 @@ function GameState:enter(params)
     self:endContact(...)
   end)
 
+  Fuel.setWorld(self.world)
+
   self.map = sti("assets/maps/scene1.lua", { "box2d" })
 
   -- Initialize map constants
@@ -70,6 +75,7 @@ function GameState:enter(params)
   self.map.layers.ground.visible = false
   self.map.layers.walls.visible = false
   self.map.layers.game_win.visible = false
+  self.map.layers.zappers.visible = false
 
   self.gameWin = self.map.layers.game_win.objects[1]
 
@@ -78,6 +84,15 @@ function GameState:enter(params)
   self.walls = {}
   for _, object in ipairs(self.map.layers.walls.objects) do
     table.insert(self.walls, Wall:new(self.world, object.x, object.y, object.width, object.height))
+  end
+
+  if Zapper.removeAll then
+    Zapper.removeAll()
+  end
+
+  local zapperLayerData = self.map.layers.zappers
+  if zapperLayerData then
+    self.zappers = Zapper.createAllFromTiledData(zapperLayerData, self.world)
   end
 
   -- Safely remove all spikes
@@ -103,7 +118,7 @@ function GameState:enter(params)
   self.sounds.music:setVolume(0.3)
   -- self.sounds.music:play()
 
-  local checkpoint = 4
+  local checkpoint = 3
   local playerStartPoint = getPlayerStartPoint(self.map, checkpoint)
   local playerX
   local playerY
@@ -123,7 +138,6 @@ function GameState:enter(params)
 
   self.gui:load()
 
-  -- Safely remove all coins
   if Coin.removeAll then
     Coin.removeAll()
   else
@@ -134,7 +148,6 @@ function GameState:enter(params)
     Coin:new(object.x, object.y, self.world, object.type)
   end
 
-  -- Safely remove all coins
   if Bolt.removeAll then
     Bolt.removeAll()
   else
@@ -144,6 +157,14 @@ function GameState:enter(params)
   for _, object in ipairs(self.map.layers.bolts.objects) do
     Bolt:new(object.x, object.y, self.world)
   end
+
+  if Fuel.removeAll then
+    Fuel.removeAll()
+  end
+
+  for _, object in ipairs(self.map.layers.fuel.objects) do
+    Fuel:new(object.x, object.y)
+  end
 end
 
 function GameState:update(dt)
@@ -151,8 +172,13 @@ function GameState:update(dt)
   self.map:update(dt)
   Coin.updateAll(dt)
   Bolt.updateAll(dt)
+  Fuel.updateAll(dt)
   Spike.updateAll(dt)
   self.gui:update(dt)
+
+  for _, zapper in ipairs(self.zappers) do
+    zapper:update(dt)
+  end
 
   if self.bfl then
     self.bfl:update(dt)
@@ -220,7 +246,11 @@ function GameState:render()
   self.player:draw()
   Coin.drawAll()
   Bolt.drawAll()
+  Fuel.drawAll()
   Spike.drawAll()
+  for _, zapper in ipairs(self.zappers) do
+    zapper:draw()
+  end
 
   if self.bfl then
     self.bfl:draw()
@@ -229,6 +259,9 @@ function GameState:render()
   -- debug draws for collisions
   -- Spike.drawAllDebug()
   -- self.player:drawDebug()
+  -- for _, zapper in ipairs(self.zappers) do
+  --   zapper:drawDebug()
+  -- end
 
   -- Draw text objects
   self:drawTextObjects()
@@ -296,7 +329,7 @@ function GameState:handleWin()
       self.player:destroy()
       self.player = nil
     end
-    gameManager:change("death")
+    gameManager:change("win")
   end
 end
 
@@ -315,12 +348,25 @@ function GameState:exit()
   if Spike.removeAll then
     Spike.removeAll()
   end
+  if Bolt.removeAll then
+    Bolt.removeAll()
+  end
+  if Fuel.removeAll then
+    Fuel.removeAll()
+  end
+  for _, zapper in ipairs(self.zappers) do
+    zapper:destroy()
+  end
+  self.zappers = {}
   if self.sounds.music then
     self.sounds.music:stop()
   end
 end
 
 function GameState:beginContact(a, b, collision)
+  if Zapper.beginContact(a, b, collision) then
+    return
+  end
   if Coin.beginContact(a, b, collision) then
     return
   end
@@ -331,6 +377,9 @@ function GameState:beginContact(a, b, collision)
     return
   end
   if Bolt.beginContact(a, b, collision) then
+    return
+  end
+  if Fuel.beginContact(a, b, collision) then
     return
   end
   if Win.beginContact(a, b, collision) then

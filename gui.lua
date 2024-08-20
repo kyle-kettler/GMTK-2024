@@ -9,25 +9,23 @@ function GUI:initialize(player)
 end
 
 function GUI:load()
-  self.launch = {}
-  self.launch.color = { 1, 0, 0, 0.7 } -- Red color with some transparency
-  self.launch.x = 0
-  self.launch.y = Constants.GAME_HEIGHT - 10
-  self.launch.width = 5
-  self.launch.height = 5
-  self.launch.scale = 2
-  self.launch.spacing = self.launch.width * self.launch.scale + 5
+  self.fuel = {}
+  self.fuel.x = -8
+  self.fuel.y = Constants.GAME_HEIGHT - 40
+  self.fuel.img = love.graphics.newImage("assets/sprites/fuel_static.png")
+  self.fuel.width = 5
+  self.fuel.height = 5
+  self.fuel.scale = 1
+  self.fuel.spacing = self.fuel.width * self.fuel.scale + 10
 
   self.health = {}
   self.health.img = love.graphics.newImage("assets/sprites/bolt.png")
-  self.health.width = self.health.img:getWidth()
-  self.health.height = self.health.img:getHeight()
   self.health.x = -10
   self.health.y = 5
   self.health.width = 5
   self.health.height = 5
-  self.health.scale = 0.8
-  self.health.spacing = self.launch.width * self.launch.scale + 3
+  self.health.scale = 1
+  self.health.spacing = self.health.width * self.health.scale + 10
 
   self.score = 0
   self.displayedScore = 0
@@ -37,9 +35,9 @@ function GUI:load()
   self.gem.img = love.graphics.newImage("assets/sprites/gem.png")
   self.gem.width = self.gem.img:getWidth()
   self.gem.height = self.gem.img:getHeight()
-  self.gem.scale = 0.8
-  self.gem.x = Constants.GAME_WIDTH - 30
-  self.gem.y = 8
+  self.gem.scale = 1
+  self.gem.x = Constants.GAME_WIDTH - 40
+  self.gem.y = 3
 end
 
 function GUI:update(dt)
@@ -54,10 +52,11 @@ end
 
 function GUI:displayLaunchInfo()
   for i = 1, self.player.launchRemaining do
-    local x = self.launch.x + self.launch.spacing * i
-    love.graphics.setColor(self.launch.color)
-    love.graphics.circle("fill", x, self.launch.y, 5, 5)
+    local x = self.fuel.x + self.fuel.spacing * i
+    love.graphics.setColor(0, 0, 0, 0.8)
+    love.graphics.draw(self.fuel.img, x + 1, self.fuel.y + 2, 0, self.fuel.scale, self.fuel.scale)
     love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(self.fuel.img, x, self.fuel.y, 0, self.fuel.scale, self.fuel.scale)
   end
 end
 
@@ -82,18 +81,18 @@ function GUI:displayScore()
   love.graphics.draw(self.gem.img, self.gem.x, self.gem.y, 0, self.gem.scale, self.gem.scale)
 
   -- Draw the score
-  love.graphics.setFont(Fonts["xsmall"])
+  love.graphics.setFont(Fonts["medium"])
   local scoreText = tostring(math.floor(self.displayedScore))
-  local textWidth = Fonts["xsmall"]:getWidth(scoreText)
+  local textWidth = Fonts["medium"]:getWidth(scoreText)
 
   -- Align the score to the right of the calculated x position
   local textX = scoreX - textWidth
 
   -- Draw the score with shadow
   love.graphics.setColor(0, 0, 0, 0.5)
-  love.graphics.print(scoreText, textX + 2, self.gem.y * 2 + 2)
+  love.graphics.print(scoreText, textX + 2, self.gem.y + 10 + 2)
   love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.print(scoreText, textX, self.gem.y * 2)
+  love.graphics.print(scoreText, textX, self.gem.y + 10)
 
   love.graphics.setColor(1, 1, 1, 1)
 end
