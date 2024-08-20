@@ -115,7 +115,7 @@ function GameState:enter(params)
   self.camera = Camera(cameraStartX, cameraStartY, Constants.GAME_WIDTH, Constants.GAME_HEIGHT)
   self.camera.scale = 1
 
-  local checkpoint = 4
+  local checkpoint = 1
   local playerStartPoint = getPlayerStartPoint(self.map, checkpoint)
   local playerX
   local playerY
