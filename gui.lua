@@ -35,7 +35,7 @@ function GUI:load()
   self.gem.img = love.graphics.newImage("assets/sprites/gem.png")
   self.gem.width = self.gem.img:getWidth()
   self.gem.height = self.gem.img:getHeight()
-  self.gem.scale = 1
+  self.gem.scale = 1.1
   self.gem.x = Constants.GAME_WIDTH - 40
   self.gem.y = 3
 end
@@ -76,9 +76,9 @@ function GUI:displayScore()
 
   -- Draw the gem
   love.graphics.setColor(0, 0, 0, 0.5)
-  love.graphics.draw(self.gem.img, self.gem.x + 2, self.gem.y + 2, 0, self.gem.scale, self.gem.scale)
+  love.graphics.draw(self.gem.img, self.gem.x + 2, self.gem.y + 3, 0, self.gem.scale, self.gem.scale)
   love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.draw(self.gem.img, self.gem.x, self.gem.y, 0, self.gem.scale, self.gem.scale)
+  love.graphics.draw(self.gem.img, self.gem.x, self.gem.y + 1, 0, self.gem.scale, self.gem.scale)
 
   -- Draw the score
   love.graphics.setFont(Fonts["medium"])

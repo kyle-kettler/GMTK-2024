@@ -5,7 +5,7 @@ love.graphics.setDefaultFilter("nearest", "nearest")
 local dependencies = require("dependencies")
 local Constants = require("constants")
 local GameManager = require("GameManager")
--- local push = require("lib/push")
+local push = require("lib/push")
 local baton = require("lib/baton")
 
 local windowWidth, windowHeight = love.window.getDesktopDimensions()
@@ -14,10 +14,10 @@ local GAME_WIDTH, GAME_HEIGHT = Constants.GAME_WIDTH, Constants.GAME_HEIGHT
 -- Input configuration
 local input = baton.new({
   controls = {
-    left = { "key:left", "key:a", "axis:leftx-", "button:dpleft" },
-    right = { "key:right", "key:d", "axis:leftx+", "button:dpright" },
-    up = { "key:up", "key:w", "axis:lefty-", "button:dpup" },
-    down = { "key:down", "key:s", "axis:lefty+", "button:dpdown" },
+    left = { "key:left", "axis:leftx-", "button:dpleft" },
+    right = { "key:right", "axis:leftx+", "button:dpright" },
+    up = { "key:up", "axis:lefty-", "button:dpup" },
+    down = { "key:down", "axis:lefty+", "button:dpdown" },
     action = { "key:x", "button:x" },
     jump = { "key:space", "button:a" },
     launch = { "key:c", "button:rightshoulder" },

@@ -24,7 +24,7 @@ end
 function MainMenu:enter()
   buttons = {
     newButton("START GAME", function()
-      gameManager:change("game", {bfl = false})
+      gameManager:change("game", { bfl = false })
     end),
     newButton("EXIT", function()
       love.event.quit(0)
@@ -48,7 +48,7 @@ end
 
 function MainMenu:render()
   love.graphics.clear(0.4, 0.7, 1, 1)
-  
+
   love.graphics.setColor(1, 1, 1, 1)
   love.graphics.setFont(Fonts["large"])
   love.graphics.setColor(0.1, 0.4, 0.5, 1)
@@ -75,7 +75,7 @@ function MainMenu:render()
     local font = love.graphics.getFont()
     local textW = font:getWidth(button.text)
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print(button.text, (Constants.GAME_WIDTH * 0.5) - textW * 0.5, by + 9)
+    love.graphics.print(button.text, (Constants.GAME_WIDTH * 0.5) - textW * 0.5, by + 7)
 
     cursorY = cursorY + (buttonHeight + vertMargin)
   end
@@ -91,7 +91,6 @@ function MainMenu:render()
   )
 end
 
-function MainMenu:exit()
-end
+function MainMenu:exit() end
 
 return MainMenu

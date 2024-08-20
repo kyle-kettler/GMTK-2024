@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="120" tilewidth="32" tileheight="32" infinite="0" nextlayerid="17" nextobjectid="404">
  <editorsettings>
-  <export target="../assets/maps/scene1.lua" format="lua"/>
+  <export format="lua"/>
  </editorsettings>
  <tileset firstgid="1" name="input_prompts" tilewidth="16" tileheight="16" tilecount="816" columns="34">
   <image source="input_prompts_packed.png" width="544" height="384"/>
@@ -279,8 +279,8 @@
 </data>
  </layer>
  <objectgroup id="6" name="tutorial" opacity="0.48">
-  <object id="74" x="264" y="3696" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="bottom">to jump</text>
+  <object id="74" x="256" y="3696" width="96" height="18.8438">
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="bottom">to jump</text>
   </object>
   <object id="79" gid="439" x="128" y="3680" width="16" height="16"/>
   <object id="80" gid="441" x="128" y="3696" width="16" height="16"/>
@@ -288,41 +288,41 @@
   <object id="82" gid="442" x="112" y="3696" width="16" height="16"/>
   <object id="83" gid="247" x="200" y="3688" width="16" height="16"/>
   <object id="84" x="168" y="3672" width="24" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
   </object>
   <object id="85" x="112" y="3696" width="104" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="bottom">to move</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="bottom">to move</text>
   </object>
-  <object id="86" gid="43" x="336" y="3696" width="16" height="16"/>
-  <object id="88" x="296" y="3680" width="32" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
+  <object id="86" gid="43" x="320" y="3696" width="16" height="16"/>
+  <object id="88" x="256" y="3680" width="96" height="18.8438">
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
   </object>
   <object id="89" gid="426" x="272" y="3696" width="16" height="16"/>
   <object id="109" x="512" y="3680" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">you can</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">you can</text>
   </object>
   <object id="110" x="512" y="3696" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">double jump</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">double jump</text>
   </object>
   <object id="111" x="576" y="3568" width="128" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">and</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">and</text>
   </object>
   <object id="112" x="576" y="3592" width="128" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">SCALE</text>
+   <text fontfamily="04b19" wrap="1" color="#ffffff" halign="center" valign="center">SCALE</text>
   </object>
   <object id="113" x="576" y="3616" width="128" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">walls</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">walls</text>
   </object>
-  <object id="324" x="448" y="3152" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">rocket fuel</text>
+  <object id="324" x="448" y="3144" width="96" height="18.8438">
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">rocket fuel</text>
   </object>
   <object id="325" x="448" y="3184" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">to launch</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">to launch</text>
   </object>
-  <object id="326" gid="589" x="456" y="3184" width="16" height="16"/>
-  <object id="327" gid="430" x="520" y="3184" width="16" height="16"/>
+  <object id="326" gid="589" x="512" y="3184" width="16" height="16"/>
+  <object id="327" gid="430" x="464" y="3184" width="16" height="16"/>
   <object id="328" x="448" y="3168" width="96" height="18.8438">
-   <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
+   <text fontfamily="04b19" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">or</text>
   </object>
   <object id="329" x="144" y="2952" width="96" height="18.8438">
    <text fontfamily="Light Pixel-7" pixelsize="12" wrap="1" color="#ffffff" halign="center" valign="center">now, escape!</text>
